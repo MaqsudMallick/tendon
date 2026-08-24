@@ -57,6 +57,12 @@ respectively.
 - **No duplicates.** Search existing issues first; if a matching one exists, do not open another.
 - **Remediation goes in the issue body as prose only** — a suggested approach a human can act on,
   never an attached patch or apply-ready code.
+- **Never suggest code comments.** This codebase forbids inline code comments (see
+  [`CONTRIBUTING.md`](./CONTRIBUTING.md) → "No inline code comments"). Any snippet or remediation
+  the AI describes must obey that rule: do not propose adding `//` or `/* */` comments — put the
+  explanation in the issue or PR description instead. JavaDoc, `#` comments in config/`.properties`
+  files, and the single permitted `// why:` note on an intentional controller `try/catch` remain
+  the only exceptions.
 
 ## The only exception
 
