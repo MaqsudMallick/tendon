@@ -41,3 +41,9 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.named('bootRun') {
+	// Run in UTC: the JDK reports the legacy zone name "Asia/Calcutta" on
+	// Windows, which modern PostgreSQL images reject at connection time.
+	jvmArgs '-Duser.timezone=UTC'
+}
