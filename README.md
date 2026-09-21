@@ -50,11 +50,15 @@ references:
     slo: { max_orphan_count: 0, max_orphan_age: 5m }
 ```
 
-**2. Point Tendon at your databases** (`application.yaml`) with a read-only role:
+**2. Point Tendon at your databases** (`application.yaml`) with a read-only role, and set the
+API credentials:
 
 ```yaml
 integrity:
   contract: classpath:integrity.yaml
+  security:
+    reader:   { username: tendon_reader,   password: ${TENDON_READER_PASSWORD} }
+    operator: { username: tendon_operator, password: ${TENDON_OPERATOR_PASSWORD} }
   datasources:
     order:    { url: jdbc:postgresql://order-db:5432/orders,      username: tendon_ro, password: ${ORDER_DB_PASSWORD} }
     customer: { url: jdbc:postgresql://customer-db:5432/customers, username: tendon_ro, password: ${CUSTOMER_DB_PASSWORD} }
@@ -65,8 +69,8 @@ integrity:
 ```bash
 ./gradlew bootRun
 # then:
-curl localhost:8080/api/violations?status=CONFIRMED
-curl localhost:8080/actuator/prometheus | grep integrity_
+curl -u tendon_reader:$TENDON_READER_PASSWORD localhost:8080/api/violations?status=CONFIRMED
+curl -u tendon_reader:$TENDON_READER_PASSWORD localhost:8080/actuator/prometheus | grep integrity_
 ```
 
 ## How it works
@@ -94,6 +98,10 @@ normal churn of eventual consistency.
 | `GET /api/violations` | query violations (filter by status/reference/age) |
 | `POST /api/violations/{id}/ignore` | mark a known-benign reference |
 | `GET /actuator/prometheus` | metrics: `integrity_orphans_total`, `integrity_oldest_orphan_age_seconds`, `integrity_slo_breached`, `integrity_last_successful_scan_timestamp`, … |
+
+Everything above needs HTTP Basic credentials: `reader` for the `GET`s, `operator` for the
+`POST`. `GET /actuator/health` is the one endpoint left open, so Kubernetes probes need no
+secret — see [Security](./docs/DESIGN.md#security).
 
 ## Roadmap
 
