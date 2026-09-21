@@ -41,6 +41,7 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+    jvmArgs '-Duser.timezone=UTC'
 }
 
 tasks.named('bootRun') {
