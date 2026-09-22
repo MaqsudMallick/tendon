@@ -8,7 +8,7 @@
 <p align="center">
   <img alt="status" src="https://img.shields.io/badge/status-pre--alpha-orange">
   <img alt="java" src="https://img.shields.io/badge/Java-17%2B-blue">
-  <img alt="spring boot" src="https://img.shields.io/badge/Spring%20Boot-3.x-green">
+  <img alt="spring boot" src="https://img.shields.io/badge/Spring%20Boot-4.x-green">
   <img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-blue">
 </p>
 
