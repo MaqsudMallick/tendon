@@ -179,6 +179,13 @@ integrity:
     interval: 30s            # incremental cadence
     full-interval: 6h        # full-scan cadence
     batch-size: 1000         # keys probed per target round-trip
+  security:
+    reader:
+      username: tendon_reader
+      password: ${TENDON_READER_PASSWORD}
+    operator:
+      username: tendon_operator
+      password: ${TENDON_OPERATOR_PASSWORD}
   datasources:
     order:
       url: jdbc:postgresql://order-db:5432/orders
@@ -207,6 +214,9 @@ GET  /actuator/health                        UP only if every configured datasou
 GET  /actuator/prometheus                    metrics (below)
 ```
 
+`GET /actuator/health` is the only endpoint served without credentials. The two `POST` endpoints
+require the `operator` principal; everything else accepts `reader` — see [Security](#security).
+
 ## Observability
 
 Prometheus metrics are labeled by `reference` so you can alert per relationship:
@@ -227,6 +237,8 @@ not just on violations.
 
 ## Security
 
+### Database access
+
 - **Least privilege.** The tool only ever needs `SELECT` on the specific tables/columns named in
   the contract. Provision a dedicated `tendon_ro` role and grant nothing else — the engine never
   writes to your service databases, even during "repair" (repair actions are proposed, and
@@ -235,6 +247,48 @@ not just on violations.
   `customer_id`), not full rows, so no business PII is copied into the integrity store.
 - **Blast radius.** Because access is read-only and out-of-band, a compromised or buggy scanner
   cannot corrupt or delete production data.
+
+### API authentication
+
+Every endpoint except `GET /actuator/health` requires **HTTP Basic** authentication. Tendon has
+no accounts, no signup and issues no tokens — the two principals below are supplied as
+configuration under `integrity.security` (see [Configuration](#configuration)) and are the whole
+identity model:
+
+| Principal  | May call                                                                     |
+| ---------- | ---------------------------------------------------------------------------- |
+| `reader`   | every `GET` under `/api`, and `GET /actuator/prometheus`                      |
+| `operator` | everything `reader` may call, plus `POST /api/violations/{id}/ignore` and `POST /api/references/{name}/scan` |
+
+Two principals rather than one, because the credential pasted into a Prometheus scrape config
+should not also be able to close a violation or trigger a scan.
+
+- **`GET /actuator/health` is unauthenticated** so Kubernetes liveness and readiness probes need
+  no secret. It reports datasource reachability — never keys or violation detail.
+- **Startup fails when either password is unset.** Tendon never generates a password and never
+  writes one to the log.
+- **The API is stateless.** No sessions and no cookies; every request carries its own
+  `Authorization` header, so CSRF protection is disabled.
+- **Transport security belongs to the deployment.** Basic credentials are only as private as the
+  channel carrying them — terminate TLS at an ingress, or run Tendon inside a mesh that does.
+
+Both machine clients speak Basic natively. For Prometheus:
+
+```yaml
+scrape_configs:
+  - job_name: tendon
+    metrics_path: /actuator/prometheus
+    basic_auth:
+      username: tendon_reader
+      password_file: /etc/prometheus/tendon-reader-password
+    static_configs:
+      - targets: ['tendon:8080']
+```
+
+**Single sign-on is out of V1 scope.** A deployment that already runs an OIDC provider should
+put Tendon behind an authenticating proxy. Validating issued tokens in-process would require an
+identity provider to be reachable before a local instance can serve a request, which V1 does not
+assume.
 
 ## Operational notes
 

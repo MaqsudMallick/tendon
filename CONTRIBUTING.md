@@ -200,8 +200,8 @@ translate service errors into HTTP responses — let exceptions bubble up to the
   block implements real business behavior, not just an error envelope (e.g. a webhook that must
   return `200 OK` on any error to avoid a provider retry storm, or a fail-soft verification path
   that converts any error into a benign result the client can act on). There are currently no
-  such cases — every controller lets exceptions bubble up to `GlobalExceptionHandler`. When you
-  add one, leave a short comment explaining *why* the catch is intentional.
+  such cases — When you add a controller, exceptions should bubble up to GlobalExceptionHandler. If you add a legitimate exception to this rule,
+  leave a short comment explaining *why* the catch is intentional.
 
 ## Build Commands
 
