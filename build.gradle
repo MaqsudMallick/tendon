@@ -48,4 +48,7 @@ tasks.named('bootRun') {
 	// Run in UTC: the JDK reports the legacy zone name "Asia/Calcutta" on
 	// Windows, which modern PostgreSQL images reject at connection time.
 	jvmArgs '-Duser.timezone=UTC'
+	// Default to the "local" profile so application-local.properties supplies
+	// the datasource. Set SPRING_PROFILES_ACTIVE to run with another profile.
+	environment 'SPRING_PROFILES_ACTIVE', System.getenv('SPRING_PROFILES_ACTIVE') ?: 'local'
 }
